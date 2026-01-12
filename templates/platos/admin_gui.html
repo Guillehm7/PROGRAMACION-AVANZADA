@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin GUI - Platos de Ecuador</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f0f2f5; padding: 20px; }
+        .container { background-color: #fff; padding: 30px; border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .header-gui { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .table-hover tbody tr:hover { background-color: #f8f9fa; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-gui">
+        <h3>🇪🇨 Administrador de Platos Típicos</h3>
+        <button type="button" class="btn btn-primary btn-lg shadow" data-bs-toggle="modal" data-bs-target="#ventanaNuevoPlato">
+            <i class="bi bi-plus-circle"></i> + Nuevo Plato
+        </button>
+    </div>
+
+    <table class="table table-hover table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>Nombre</th>
+                <th>Región</th>
+                <th>Precio</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for plato in platos %}
+            <tr>
+                <td><strong>{{ plato.nombre }}</strong></td>
+                <td><span class="badge bg-info text-dark">{{ plato.get_region_display }}</span></td>
+                <td>${{ plato.precio_sugerido }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-center text-muted">No hay platos registrados.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="ventanaNuevoPlato" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="exampleModalLabel">Crear Nuevo Plato Típico</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formPlato">
+            <div class="mb-3">
+                <label for="nombreInput" class="form-label">Nombre del Plato</label>
+                <input type="text" class="form-control" id="nombreInput" required>
+            </div>
+            <div class="mb-3">
+                <label for="regionInput" class="form-label">Región</label>
+                <select class="form-select" id="regionInput" required>
+                    <option value="Costa">Costa</option>
+                    <option value="Sierra">Sierra</option>
+                    <option value="Oriente">Amazonía</option>
+                    <option value="Insular">Galápagos</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="precioInput" class="form-label">Precio Sugerido ($)</label>
+                <input type="number" step="0.01" class="form-control" id="precioInput" required>
+            </div>
+            <div class="mb-3">
+                <label for="descInput" class="form-label">Descripción Corta</label>
+                <textarea class="form-control" id="descInput" rows="3" required></textarea>
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" id="btnGuardar">Guardar Plato</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <script>
+    // EVENTO: Capturamos el clic en el botón "Guardar Plato" de la ventana modal
+    document.getElementById('btnGuardar').addEventListener('click', function() {
+        // 1. Recolectar datos del formulario de la ventana
+        const nombre = document.getElementById('nombreInput').value;
+        const region = document.getElementById('regionInput').value;
+        const precio = document.getElementById('precioInput').value;
+        const descripcion = document.getElementById('descInput').value;
+
+        // Validación simple
+        if(!nombre || !precio || !descripcion) {
+            Swal.fire('Error', 'Por favor completa todos los campos', 'warning');
+            return;
+        }
+
+        // Obtenemos el token CSRF necesario para seguridad en Django
+        const csrftoken = document.cookie.split('; ').find(row => row.startsWith('csrftoken')).split('=')[1];
+
+        // 2. Enviar los datos al servidor usando FETCH (AJAX)
+        fetch('/admin-gui/', { // La URL debe coincidir con la que definimos en urls.py
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({
+                nombre: nombre,
+                region: region,
+                precio: precio,
+                descripcion: descripcion
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.status === 'ok') {
+                // EVENTO: Cerrar la ventana modal si todo salió bien
+                const modalElement = document.getElementById('ventanaNuevoPlato');
+                const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                modalInstance.hide();
+
+                // Mostrar mensaje de éxito y recargar para ver el nuevo plato
+                Swal.fire('¡Éxito!', data.message, 'success').then(() => {
+                    window.location.reload();
+                });
+            } else {
+                Swal.fire('Error', data.message, 'error');
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
