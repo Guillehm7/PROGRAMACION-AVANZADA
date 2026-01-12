@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gastronomía de Ecuador</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f4f4f4; }
+        .plato-card { background: white; padding: 20px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; }
+        .region { color: #e67e22; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Platos Típicos del Ecuador</h1>
+    <hr>
+    {% for plato in platos %}
+        <div class="plato-card">
+            <h2>{{ plato.nombre }}</h2>
+            <p class="region">Región: {{ plato.get_region_display }}</p>
+            <p>{{ plato.descripcion }}</p>
+            <p><strong>Precio estimado:</strong> ${{ plato.precio_sugerido }}</p>
+        </div>
+    {% empty %}
+        <p>No hay platos registrados todavía.</p>
+    {% endfor %}
+</body>
+</html>
